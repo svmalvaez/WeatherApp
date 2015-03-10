@@ -1,5 +1,7 @@
 package com.example.svmalvaez.sunshine;
 
+import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -12,8 +14,10 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -37,8 +41,7 @@ import java.util.List;
  */
 public  class ForecastFragment extends Fragment {
 
-    public ForecastFragment() {
-    }
+    private ArrayAdapter<String> mForecastAdapter;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -63,8 +66,7 @@ public  class ForecastFragment extends Fragment {
                 Arrays.asList(forecastArray));
 
         // Adapter which is going to help us to fill the list view with the data we define, it receives
-        ArrayAdapter<String> adapter;
-        adapter = new ArrayAdapter<String>(
+        mForecastAdapter = new ArrayAdapter<String>(
                 getActivity(),
                 R.layout.list_item_forecast,
                 R.id.list_item_forecaste_textview,
@@ -74,8 +76,17 @@ public  class ForecastFragment extends Fragment {
         //Get the reference pf the list view and pass de Adapter
         ListView listView = (ListView) rootView.findViewById(
                 R.id.listview_forecast);
-        listView.setAdapter(adapter);
+        listView.setAdapter(mForecastAdapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener(){
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+                String forecast = mForecastAdapter.getItem(position);
 
+                Intent detailactivity = new Intent(getActivity(),DetailActivity.class)
+                        .putExtra(Intent.EXTRA_TEXT, forecast);
+                startActivity(detailactivity);
+            }
+        });
         return rootView;
     }
 
@@ -98,6 +109,16 @@ public  class ForecastFragment extends Fragment {
     }
 
     public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
+        @Override
+        protected void onPostExecute(String[] strings) {
+            super.onPostExecute(strings);
+            if (strings != null) {
+                mForecastAdapter.clear();
+                for(String dayForecast : strings){
+                    mForecastAdapter.add(dayForecast);
+                }
+            }
+        }
 
         private final String LOG_TAG =  FetchWeatherTask.class.getSimpleName();
 

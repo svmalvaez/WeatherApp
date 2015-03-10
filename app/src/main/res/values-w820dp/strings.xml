@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pref_location_label">Location</string>
+    <string name="pref_location_key">94043</string>
+    <string name="pref_location_default">94043</string>
+</resources>
