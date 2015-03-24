@@ -9,5 +9,9 @@
     <string name="pref_location_label">Location</string>
     <string name="pref_location_key" translatable="false">location</string>
     <string name="pref_location_default" translatable="false">94043</string>
+    <string name="pref_temperature_key">temperature</string>
+    <string name="pref_temperature_label">Temperature</string>
+    <string name="pref_temperature_default">metric</string>
+    <string name="action_location">Location</string>
 
 </resources>

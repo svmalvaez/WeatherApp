@@ -1,10 +1,14 @@
 package com.example.svmalvaez.sunshine;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.text.format.Time;
 import android.util.Log;
@@ -17,6 +21,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.ShareActionProvider;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -40,7 +45,7 @@ import java.util.List;
  * A placeholder fragment containing a simple view.
  */
 public  class ForecastFragment extends Fragment {
-
+    private ShareActionProvider mShareActionProvider;
     private ArrayAdapter<String> mForecastAdapter;
 
     @Override
@@ -50,27 +55,23 @@ public  class ForecastFragment extends Fragment {
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+        updateWeather();
+
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-        //This is some fake data to fill our ListView
-        String[] forecastArray = {
-                "Today - Sunny - 88/63",
-                "Today - Sunny - 88/63",
-                "Today - Sunny - 88/63",
-                "Today - Sunny - 88/63",
-                "Today - Sunny - 88/63",
-                "Today - Sunny - 88/63"
-        };
-        List<String> forecast_entry = new ArrayList<String>(
-                Arrays.asList(forecastArray));
 
         // Adapter which is going to help us to fill the list view with the data we define, it receives
         mForecastAdapter = new ArrayAdapter<String>(
                 getActivity(),
                 R.layout.list_item_forecast,
                 R.id.list_item_forecaste_textview,
-                forecast_entry
+                new ArrayList<String>()
         );
 
         //Get the reference pf the list view and pass de Adapter
@@ -95,17 +96,47 @@ public  class ForecastFragment extends Fragment {
         //Its going to notificate us when some item (which we specify) is selected
         int id = item.getItemId();
         if (id == R.id.action_refresh){
-            FetchWeatherTask weathertask = new FetchWeatherTask();
-            weathertask.execute("94043");
+            updateWeather();
+            return true;
+        }
+        else if (id == R.id.pref_location){
+            showLocation();
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
+    private void showLocation() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String location = prefs.getString(getString(R.string.pref_location_key),
+                        getString(R.string.pref_location_default));
+
+        Uri geolocation = Uri.parse("geo:0,0?").buildUpon()
+                .appendQueryParameter("q",location)
+                .build();
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(geolocation);
+            startActivity(intent);
+        startActivity(intent);
+    }
+
+    private void updateWeather() {
+        FetchWeatherTask weathertask = new FetchWeatherTask();
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String location = prefs.getString(getString(R.string.pref_location_key),
+                getString(R.string.pref_location_default));
+        String metrics = prefs.getString(getString(R.string.pref_temperature_key),getString(R.string.pref_temperature_default));
+        weathertask.execute(location,metrics);
+    }
+
+    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.forecastfragment, menu);
+
+        MenuItem item = menu.findItem(R.id.menu_item_share);
+        mShareActionProvider = (ShareActionProvider) item.getActionProvider();
     }
 
     public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
@@ -148,7 +179,7 @@ public  class ForecastFragment extends Fragment {
                 Uri biultUri = Uri.parse(FORECAST_BASE_URL).buildUpon()
                         .appendQueryParameter(QUERY_PARAM, params[0])
                         .appendQueryParameter(FORMAT_PARAM, format)
-                        .appendQueryParameter(UNITS_PARAM, units)
+                        .appendQueryParameter(UNITS_PARAM, params[1])
                         .appendQueryParameter(DAYS_PARAMS, Integer.toString(numDays))
                         .build();
 
